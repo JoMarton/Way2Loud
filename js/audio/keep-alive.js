@@ -56,6 +56,8 @@ export function makeToneWav({
 export function createKeepAlive() {
   /** @type {HTMLAudioElement | null} */
   let audio = null;
+  /** Why the last play() failed, for the troubleshooting panel. */
+  let lastError = '';
 
   return {
     /** Starts the tone. Call from a tap, or the browser may block playback. */
@@ -67,8 +69,10 @@ export function createKeepAlive() {
         audio = new Audio(URL.createObjectURL(wav));
         audio.loop = true;
       }
-      void audio.play().catch(() => {
+      lastError = '';
+      audio.play().catch((err) => {
         // Blocked or unsupported: listening still works while the screen is on.
+        lastError = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
       });
       if ('mediaSession' in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
@@ -77,6 +81,12 @@ export function createKeepAlive() {
         });
         navigator.mediaSession.playbackState = 'playing';
       }
+    },
+    /** @returns {string} a short description, for the troubleshooting panel */
+    status() {
+      if (lastError) return `blocked: ${lastError}`;
+      if (!audio || audio.paused) return 'off';
+      return `playing (${audio.currentTime.toFixed(1)} s into the loop)`;
     },
     stop() {
       audio?.pause();

@@ -26,6 +26,10 @@ const testChimeEl = byId('test-chime');
 const keepScreenOnEl = /** @type {HTMLInputElement} */ (byId('keep-screen-on'));
 const dimEl = byId('dim');
 const dimOverlayEl = byId('dim-overlay');
+const diagnosticsEl = byId('diagnostics');
+const troubleshootingEl = /** @type {HTMLDetailsElement} */ (
+  document.querySelector('.troubleshooting')
+);
 const view = createMeterView({
   root: document.documentElement,
   meter: byId('meter'),
@@ -68,7 +72,10 @@ if (!wakeLock.supported) {
 let session = null;
 
 /** Counts what happened while the page was hidden, to report it on return. */
-const away = { since: 0, readings: 0, sounds: 0 };
+const away = { since: 0, readings: 0, sounds: 0, lastReport: 'none yet' };
+
+/** The deploy folder this code was loaded from (e.g. "v8"), or "dev" when run locally. */
+const CODE_VERSION = import.meta.url.match(/\/(v\d+)\/js\//)?.[1] ?? 'dev';
 
 /** @param {unknown} err */
 function describeError(err) {
@@ -152,8 +159,37 @@ document.addEventListener('visibilitychange', () => {
     return;
   }
   const message = describeTimeAway(performance.now() - away.since, away.readings, away.sounds);
-  if (message) statusEl.textContent = message;
+  if (message) {
+    statusEl.textContent = message;
+    away.lastReport = message;
+  }
 });
+
+/** Live status for the troubleshooting panel, so problems on a phone can be read off the screen. */
+function renderDiagnostics() {
+  const rows = {
+    Page: document.querySelector('.version')?.textContent ?? '?',
+    Code: CODE_VERSION,
+    Listening: session ? `yes (${session.meter.mode})` : 'no',
+    Audio: session?.meter.context.state ?? '–',
+    'Screen on': `${wakeLock.status()} (setting ${settings.current.keepScreenOn ? 'on' : 'off'})`,
+    'Screen-off tone': `${keepAlive.status()} (setting ${settings.current.backgroundAudio ? 'on' : 'off'})`,
+    'Last screen-off': away.lastReport,
+  };
+  diagnosticsEl.replaceChildren(
+    ...Object.entries(rows).flatMap(([label, value]) => {
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      dt.textContent = label;
+      dd.textContent = value;
+      return [dt, dd];
+    }),
+  );
+}
+setInterval(() => {
+  if (troubleshootingEl.open) renderDiagnostics();
+}, 1000);
+troubleshootingEl.addEventListener('toggle', renderDiagnostics);
 
 /** @param {boolean} dimmed */
 function setDimmed(dimmed) {

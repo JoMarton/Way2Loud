@@ -20,6 +20,7 @@ export class AudioSuspendedError extends Error {
  * @typedef {object} Meter
  * @property {() => void} stop releases the mic and audio context
  * @property {AudioContext} context the running context, for playing sounds
+ * @property {'audio thread' | 'polling'} mode how levels are measured
  */
 
 /**
@@ -75,14 +76,18 @@ export async function startMeter(onReading) {
 
   /** @type {() => void} */
   let stopMeasuring;
+  /** @type {Meter['mode']} */
+  let mode = 'audio thread';
   try {
     stopMeasuring = await measureOnAudioThread(ctx, source, mute, onReading);
   } catch {
     stopMeasuring = measureByPolling(ctx, source, mute, onReading);
+    mode = 'polling';
   }
 
   return {
     context: ctx,
+    mode,
     stop() {
       stopMeasuring();
       source.disconnect();

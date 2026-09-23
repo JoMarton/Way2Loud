@@ -25,10 +25,21 @@ jobs:
       # No build step: copy only the site files (no tests or config) into _site.
       - name: Collect site files
         run: |
-          mkdir _site
-          for f in index.html styles.css manifest.webmanifest sw.js js icons; do
+          ver="v${GITHUB_RUN_NUMBER}"
+          mkdir -p "_site/$ver"
+          for f in index.html manifest.webmanifest sw.js icons; do
             if [ -e "$f" ]; then cp -R "$f" _site/; fi
           done
+          # Code and styles go in a folder per deploy, so a freshly loaded page can
+          # never run old cached code. Root copies serve pages cached before this.
+          for f in styles.css js; do
+            cp -R "$f" "_site/$ver/"
+            cp -R "$f" _site/
+          done
+          sed -i -e "s|href=\"styles.css\"|href=\"$ver/styles.css\"|" \
+            -e "s|src=\"js/main.js\"|src=\"$ver/js/main.js\"|" _site/index.html
+          grep -F "$ver/js/main.js" _site/index.html
+          grep -F "$ver/styles.css" _site/index.html
       # Stamp the page so you can tell which deploy a device is showing.
       - name: Stamp version
         run: |
