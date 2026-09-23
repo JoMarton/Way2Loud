@@ -6,7 +6,7 @@ import { createChime } from './audio/chime.js';
 import { createKeepAlive } from './audio/keep-alive.js';
 import { applyGain, createLoudnessDetector } from './audio/levels.js';
 import { AudioSuspendedError, createAudioContext, startMeter } from './audio/meter.js';
-import { describeTimeAway } from './ui/background.js';
+import { describeTimeAway, emptyAwayStats } from './ui/background.js';
 import { createMeterView } from './ui/meter-view.js';
 import { bindSettings } from './ui/settings.js';
 import { createWakeLock } from './ui/wake-lock.js';
@@ -72,7 +72,7 @@ if (!wakeLock.supported) {
 let session = null;
 
 /** Counts what happened while the page was hidden, to report it on return. */
-const away = { since: 0, readings: 0, sounds: 0, lastReport: 'none yet' };
+const away = { since: 0, stats: emptyAwayStats(), lastReport: 'none yet' };
 
 /** The deploy folder this code was loaded from (e.g. "v8"), or "dev" when run locally. */
 const CODE_VERSION = import.meta.url.match(/\/(v\d+)\/js\//)?.[1] ?? 'dev';
@@ -100,12 +100,16 @@ async function start() {
     const meter = await startMeter(({ db, time }) => {
       const decision = detector.update(applyGain(db, settings.current.sensitivityDb), time);
       view.render({ ...decision, time });
-      if (document.hidden) away.readings++;
+      if (document.hidden) {
+        away.stats.readings++;
+        away.stats.maxDb = Math.max(away.stats.maxDb, db);
+        if (decision.becameLoud) away.stats.loudMoments++;
+      }
       if (decision.becameLoud && settings.current.chimeEnabled && chime) {
         const soundMs = chime.ring(time, settings.current.chimeSound);
         if (soundMs) {
           detector.pauseUntil(time + soundMs + SOUND_TAIL_MS);
-          if (document.hidden) away.sounds++;
+          if (document.hidden) away.stats.sounds++;
         }
       }
     });
@@ -155,10 +159,10 @@ function testSound() {
 document.addEventListener('visibilitychange', () => {
   if (!session) return;
   if (document.hidden) {
-    Object.assign(away, { since: performance.now(), readings: 0, sounds: 0 });
+    Object.assign(away, { since: performance.now(), stats: emptyAwayStats() });
     return;
   }
-  const message = describeTimeAway(performance.now() - away.since, away.readings, away.sounds);
+  const message = describeTimeAway(performance.now() - away.since, away.stats);
   if (message) {
     statusEl.textContent = message;
     away.lastReport = message;
