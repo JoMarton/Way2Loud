@@ -61,6 +61,7 @@ way2loud/
 - **Smoothing**: an exponential moving average of about 150–300 ms, so single spikes (a clap, a cough) don't trigger the alert.
 - **Hysteresis**: the level has to stay above the threshold for about 400 ms before it counts as loud. It only goes back to normal once it drops a few dB below the threshold. This stops the display from flickering.
 - **Chime cooldown**: at most one chime every 3 s, so it doesn't turn into nagging.
+- **Sensitivity (per device)**: every reading is shifted by a gain in dB (±30), like an input gain knob, because each device's mic has a different sensitivity. It's set in a collapsed Settings panel and saved per device in localStorage. Calibration can later set it automatically so the child's normal voice lands at the same point on the bar on every device.
 - **Calibration**: the child speaks normally for about 5 s. Take a high percentile (p90) of the voiced frames and add about 6 dB (adjustable) to get the threshold. Frames below the noise floor are ignored.
 - **Feedback loop**: the chime is quiet and short, and the meter ignores input while the chime plays. Otherwise the chime itself could register as loud.
 - **Three zones**: quiet, good and too loud. The visual encourages the "good" zone instead of only punishing the "too loud" one.

@@ -11,7 +11,20 @@
   <body>
     <main class="screen">
       <h1>Way2Loud</h1>
-      <p id="status">Loading…</p>
+      <div id="meter" class="meter" role="img" aria-label="Voice loudness">
+        <div class="meter-fill"></div>
+      </div>
+      <p id="readout" class="readout" aria-live="off">– dB</p>
+      <button id="toggle" class="button" type="button">Start</button>
+      <p id="status" class="status" aria-live="polite">Loading…</p>
+      <details class="settings">
+        <summary>Settings</summary>
+        <label class="setting" for="sensitivity">
+          <span>Sensitivity <output id="sensitivity-value" for="sensitivity">0 dB</output></span>
+          <input id="sensitivity" type="range" step="1" />
+        </label>
+        <p class="hint">Turn up if the bar barely moves when talking; down if it is always high.</p>
+      </details>
     </main>
   </body>
 </html>

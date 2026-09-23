@@ -2,6 +2,8 @@
   --bg: #f6f8f5;
   --fg: #1c2420;
   --accent: #1f7a4d;
+  --track: #dde4df;
+  --muted: #56645c;
   color-scheme: light dark;
 }
 
@@ -10,6 +12,8 @@
     --bg: #111714;
     --fg: #e6ede9;
     --accent: #4cc38a;
+    --track: #25302a;
+    --muted: #9aa8a0;
   }
 }
 
@@ -49,4 +53,88 @@ h1 {
   margin: 0;
   color: var(--accent);
   font-size: clamp(2rem, 8vw, 4rem);
+}
+
+/* Level meter: JS sets --level (0..1); the fill scales, so there is no layout work per frame. */
+.meter {
+  --level: 0;
+  width: min(100%, 28rem);
+  height: 3rem;
+  border-radius: 1.5rem;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(var(--level));
+  transform-origin: left center;
+  transition: transform 60ms linear;
+}
+
+.readout {
+  margin: 0;
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.button {
+  min-width: 10rem;
+  padding: 0.9rem 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.button:disabled {
+  opacity: 0.6;
+}
+
+.status {
+  margin: 0;
+  max-width: 28rem;
+  color: var(--muted);
+}
+
+.settings {
+  width: min(100%, 28rem);
+  margin-top: 1rem;
+  text-align: left;
+  color: var(--muted);
+}
+
+.settings summary {
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--fg);
+}
+
+.setting span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.setting input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.setting output {
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
 }
