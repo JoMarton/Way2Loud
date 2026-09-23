@@ -29,5 +29,5 @@ export function describeTimeAway(awayMs, readings, sounds) {
     const played = sounds === 1 ? '1 sound' : `${sounds} sounds`;
     return `Kept listening while the screen was off (${away}) and played ${played}.`;
   }
-  return `Listening paused while the screen was off (${away}). To avoid this, turn on "Keep screen on" in Settings.`;
+  return `Listening paused while the screen was off (${away}). To avoid this, turn on "Keep screen on" in Settings, or try "Keep listening with screen off".`;
 }

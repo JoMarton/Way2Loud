@@ -3,6 +3,7 @@
 /** Entry point. Wires screens: Start → Calibrate → Listen (calibration comes in milestone 4). */
 
 import { createChime } from './audio/chime.js';
+import { createKeepAlive } from './audio/keep-alive.js';
 import { applyGain, createLoudnessDetector } from './audio/levels.js';
 import { AudioSuspendedError, createAudioContext, startMeter } from './audio/meter.js';
 import { describeTimeAway } from './ui/background.js';
@@ -23,6 +24,8 @@ const statusEl = byId('status');
 const toggleEl = /** @type {HTMLButtonElement} */ (byId('toggle'));
 const testChimeEl = byId('test-chime');
 const keepScreenOnEl = /** @type {HTMLInputElement} */ (byId('keep-screen-on'));
+const dimEl = byId('dim');
+const dimOverlayEl = byId('dim-overlay');
 const view = createMeterView({
   root: document.documentElement,
   meter: byId('meter'),
@@ -30,6 +33,7 @@ const view = createMeterView({
   label: byId('zone-label'),
 });
 const wakeLock = createWakeLock();
+const keepAlive = createKeepAlive();
 const settings = bindSettings(
   {
     sensitivity: /** @type {HTMLInputElement} */ (byId('sensitivity')),
@@ -37,9 +41,14 @@ const settings = bindSettings(
     chime: /** @type {HTMLInputElement} */ (byId('chime')),
     sound: /** @type {HTMLSelectElement} */ (byId('sound')),
     keepScreenOn: keepScreenOnEl,
+    backgroundAudio: /** @type {HTMLInputElement} */ (byId('background-audio')),
   },
   (current) => {
-    if (session) wakeLock.set(current.keepScreenOn);
+    if (!session) return;
+    wakeLock.set(current.keepScreenOn);
+    // Settings changes come from a tap, so starting playback here is allowed.
+    if (current.backgroundAudio) keepAlive.start();
+    else keepAlive.stop();
   },
 );
 
@@ -75,6 +84,8 @@ function describeError(err) {
 async function start() {
   toggleEl.disabled = true;
   statusEl.textContent = 'Starting the mic…';
+  // Must start inside the tap (before any await), or the browser blocks playback.
+  if (settings.current.backgroundAudio) keepAlive.start();
   const detector = createLoudnessDetector();
   /** @type {ReturnType<typeof createChime> | null} */
   let chime = null;
@@ -94,9 +105,11 @@ async function start() {
     chime = createChime(meter.context);
     session = { meter, detector, chime };
     wakeLock.set(settings.current.keepScreenOn);
+    dimEl.hidden = false;
     toggleEl.textContent = 'Stop';
     statusEl.textContent = 'Listening. Try talking, then talking louder.';
   } catch (err) {
+    keepAlive.stop();
     statusEl.textContent = describeError(err);
   } finally {
     toggleEl.disabled = false;
@@ -107,6 +120,9 @@ function stop() {
   session?.meter.stop();
   session = null;
   wakeLock.set(false);
+  keepAlive.stop();
+  setDimmed(false);
+  dimEl.hidden = true;
   view.reset();
   toggleEl.textContent = 'Start';
   statusEl.textContent = 'Stopped.';
@@ -139,7 +155,14 @@ document.addEventListener('visibilitychange', () => {
   if (message) statusEl.textContent = message;
 });
 
+/** @param {boolean} dimmed */
+function setDimmed(dimmed) {
+  dimOverlayEl.hidden = !dimmed;
+}
+
 testChimeEl.addEventListener('click', testSound);
+dimEl.addEventListener('click', () => setDimmed(true));
+dimOverlayEl.addEventListener('click', () => setDimmed(false));
 toggleEl.addEventListener('click', () => (session ? stop() : void start()));
 view.reset();
 statusEl.textContent = 'Tap Start and allow the microphone.';

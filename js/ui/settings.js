@@ -15,6 +15,7 @@ export const SENSITIVITY_MAX_DB = 30;
  * @property {boolean} chimeEnabled whether to play a sound when the voice gets too loud
  * @property {string} chimeSound a sound id, or "random" for a different one each time
  * @property {boolean} keepScreenOn whether to keep the screen on while listening
+ * @property {boolean} backgroundAudio experimental: play an inaudible tone so Android keeps listening with the screen off
  */
 
 /** @type {Readonly<Settings>} */
@@ -22,7 +23,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   sensitivityDb: 0,
   chimeEnabled: true,
   chimeSound: RANDOM_SOUND,
-  keepScreenOn: false,
+  keepScreenOn: true,
+  backgroundAudio: false,
 });
 
 /**
@@ -59,6 +61,10 @@ export function normalizeSettings(raw) {
         : DEFAULT_SETTINGS.chimeSound,
     keepScreenOn:
       typeof obj.keepScreenOn === 'boolean' ? obj.keepScreenOn : DEFAULT_SETTINGS.keepScreenOn,
+    backgroundAudio:
+      typeof obj.backgroundAudio === 'boolean'
+        ? obj.backgroundAudio
+        : DEFAULT_SETTINGS.backgroundAudio,
   };
 }
 
@@ -98,6 +104,7 @@ export const formatDb = (db) => `${db > 0 ? '+' : ''}${db} dB`;
  * @property {HTMLInputElement} chime
  * @property {HTMLSelectElement} sound
  * @property {HTMLInputElement} keepScreenOn
+ * @property {HTMLInputElement} backgroundAudio
  */
 
 /**
@@ -138,6 +145,11 @@ export function bindSettings(els, onChange = () => {}) {
   els.keepScreenOn.checked = current.keepScreenOn;
   els.keepScreenOn.addEventListener('change', () =>
     update({ keepScreenOn: els.keepScreenOn.checked }),
+  );
+
+  els.backgroundAudio.checked = current.backgroundAudio;
+  els.backgroundAudio.addEventListener('change', () =>
+    update({ backgroundAudio: els.backgroundAudio.checked }),
   );
 
   return {

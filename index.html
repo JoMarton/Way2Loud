@@ -24,6 +24,9 @@
       </div>
       <p id="readout" class="readout" aria-live="off">– dB</p>
       <button id="toggle" class="button" type="button">Start</button>
+      <button id="dim" class="button button-small button-quiet" type="button" hidden>
+        Dim screen
+      </button>
       <p id="status" class="status" aria-live="polite">Loading…</p>
       <details class="settings">
         <summary>Settings</summary>
@@ -51,8 +54,20 @@
         <p id="keep-screen-on-hint" class="hint">
           Some phones stop listening when the screen turns off. Turn this on if yours does.
         </p>
+        <label class="setting setting-inline" for="background-audio">
+          <span>Keep listening with screen off (experimental)</span>
+          <input id="background-audio" type="checkbox" />
+        </label>
+        <p class="hint">
+          Plays a sound too low to hear so Android keeps the page running. Shows a media
+          notification and uses a little more battery.
+        </p>
       </details>
       <p class="version">dev</p>
     </main>
+    <div id="dim-overlay" class="dim-overlay" hidden>
+      <div class="dim-dot"></div>
+      <p>Listening. Tap to show the meter.</p>
+    </div>
   </body>
 </html>

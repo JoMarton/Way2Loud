@@ -24,7 +24,7 @@ Decisions so far:
 - **Alert sounds**: ten sounds (chime, ding-dong, xylophone, boing, slide whistle, bloop, duck, robot, cuckoo, shh) made in code from oscillators, filters and noise, so no audio files are needed. They are loudness-matched to within ±1 dB. The parent picks one, or "Surprise me" picks a different one each time.
 - **PWA, written by hand**:
   - `manifest.webmanifest` + `sw.js`, a small cache-first service worker for offline use and "Add to Home Screen".
-  - An optional "Keep screen on" setting uses a Wake Lock while listening. Listening with the screen off depends on the phone and browser (iOS Safari always pauses), so when the screen comes back on the app reports whether it kept listening.
+  - Screen off: Android browsers freeze a background page after about 20 s, even while it uses the mic; iOS Safari pauses right away. So "Keep screen on" (a Wake Lock) is on by default, and a "Dim screen" button shows a black page with a faint zone-colored dot to save battery on OLED screens. An experimental setting loops an inaudible tone (25 Hz at -45 dBFS) through an `<audio>` element so Android treats the page as playing media. When the screen comes back on, the app reports whether it kept listening.
 - **Dev tooling (package.json has dev dependencies only)**:
   - Vitest, Playwright, TypeScript for checking, ESLint + Prettier.
   - Node 22 and pnpm (npm also works).
@@ -46,6 +46,7 @@ way2loud/
       calibration.js    # pure: baseline from samples → suggested sensitivity
       sounds.js         # the ten synthesized sounds + random pick
       chime.js          # plays the chosen sound + cooldown
+      keep-alive.js     # experimental inaudible tone for screen-off listening
       level-processor.js # AudioWorklet: RMS per block on the audio thread
     ui/
       meter-view.js     # updates --level / zone class

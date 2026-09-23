@@ -36,6 +36,11 @@ describe('normalizeSettings', () => {
     expect(normalizeSettings({ chimeSound: 'kazoo' }).chimeSound).toBe(DEFAULT_SETTINGS.chimeSound);
   });
 
+  it('keeps the screen on by default and leaves the experimental option off', () => {
+    expect(DEFAULT_SETTINGS.keepScreenOn).toBe(true);
+    expect(DEFAULT_SETTINGS.backgroundAudio).toBe(false);
+  });
+
   it('upgrades settings saved before the newer options existed', () => {
     expect(normalizeSettings({ sensitivityDb: 5, chimeEnabled: false })).toEqual({
       ...DEFAULT_SETTINGS,
@@ -57,7 +62,8 @@ describe('loadSettings / saveSettings', () => {
       sensitivityDb: 12,
       chimeEnabled: false,
       chimeSound: 'quack',
-      keepScreenOn: true,
+      keepScreenOn: false,
+      backgroundAudio: true,
     };
     saveSettings(saved, storage);
     expect(loadSettings(storage)).toEqual(saved);
