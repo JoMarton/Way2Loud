@@ -1,0 +1,29 @@
+{
+  "name": "way2loud",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helps a child learn to speak at a normal volume. Runs in the browser; audio never leaves the device.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "serve .",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p jsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "serve": "^14.2.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
