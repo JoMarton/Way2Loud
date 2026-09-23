@@ -22,7 +22,12 @@ describe('normalizeSettings', () => {
   });
 
   it('accepts numeric strings (range inputs give strings) and rounds', () => {
-    expect(normalizeSettings({ sensitivityDb: '7.6' })).toEqual({ sensitivityDb: 8 });
+    expect(normalizeSettings({ sensitivityDb: '7.6' }).sensitivityDb).toBe(8);
+  });
+
+  it('keeps chimeEnabled only if it is a boolean', () => {
+    expect(normalizeSettings({ chimeEnabled: false }).chimeEnabled).toBe(false);
+    expect(normalizeSettings({ chimeEnabled: 'no' }).chimeEnabled).toBe(true);
   });
 
   it('clamps sensitivity to ±30 dB', () => {
@@ -34,8 +39,8 @@ describe('normalizeSettings', () => {
 describe('loadSettings / saveSettings', () => {
   it('round-trips through storage', () => {
     const storage = memoryStorage();
-    saveSettings({ sensitivityDb: 12 }, storage);
-    expect(loadSettings(storage)).toEqual({ sensitivityDb: 12 });
+    saveSettings({ sensitivityDb: 12, chimeEnabled: false }, storage);
+    expect(loadSettings(storage)).toEqual({ sensitivityDb: 12, chimeEnabled: false });
   });
 
   it('returns defaults when storage is empty, corrupt or missing', () => {
@@ -55,7 +60,7 @@ describe('loadSettings / saveSettings', () => {
         throw new Error('blocked');
       },
     };
-    expect(() => saveSettings({ sensitivityDb: 3 }, broken)).not.toThrow();
+    expect(() => saveSettings({ sensitivityDb: 3, chimeEnabled: true }, broken)).not.toThrow();
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
   });
 });

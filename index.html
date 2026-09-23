@@ -11,8 +11,10 @@
   <body>
     <main class="screen">
       <h1>Way2Loud</h1>
+      <p id="zone-label" class="zone-label" aria-live="polite">&nbsp;</p>
       <div id="meter" class="meter" role="img" aria-label="Voice loudness">
         <div class="meter-fill"></div>
+        <div class="meter-threshold"></div>
       </div>
       <p id="readout" class="readout" aria-live="off">– dB</p>
       <button id="toggle" class="button" type="button">Start</button>
@@ -23,8 +25,16 @@
           <span>Sensitivity <output id="sensitivity-value" for="sensitivity">0 dB</output></span>
           <input id="sensitivity" type="range" step="1" />
         </label>
-        <p class="hint">Turn up if the bar barely moves when talking; down if it is always high.</p>
+        <p class="hint">
+          Turn up if normal talking barely reaches the middle of the bar; down if it goes past the
+          line.
+        </p>
+        <label class="setting setting-inline" for="chime">
+          <span>Chime when too loud</span>
+          <input id="chime" type="checkbox" />
+        </label>
       </details>
+      <p class="version">dev</p>
     </main>
   </body>
 </html>

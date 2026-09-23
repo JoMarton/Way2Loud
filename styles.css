@@ -4,6 +4,9 @@
   --accent: #1f7a4d;
   --track: #dde4df;
   --muted: #56645c;
+  --zone-quiet: #7d8f86;
+  --zone-good: #1f7a4d;
+  --zone-loud: #c4432b;
   color-scheme: light dark;
 }
 
@@ -14,6 +17,9 @@
     --accent: #4cc38a;
     --track: #25302a;
     --muted: #9aa8a0;
+    --zone-quiet: #6f8279;
+    --zone-good: #4cc38a;
+    --zone-loud: #ff7a5c;
   }
 }
 
@@ -58,6 +64,8 @@ h1 {
 /* Level meter: JS sets --level (0..1); the fill scales, so there is no layout work per frame. */
 .meter {
   --level: 0;
+  --threshold: 0.667;
+  position: relative;
   width: min(100%, 28rem);
   height: 3rem;
   border-radius: 1.5rem;
@@ -67,10 +75,46 @@ h1 {
 
 .meter-fill {
   height: 100%;
-  background: var(--accent);
+  background: var(--zone-color, var(--accent));
   transform: scaleX(var(--level));
   transform-origin: left center;
-  transition: transform 60ms linear;
+  transition:
+    transform 60ms linear,
+    background-color 250ms ease;
+}
+
+/* The "too loud" line. */
+.meter-threshold {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--threshold) * 100%);
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--fg);
+  opacity: 0.35;
+}
+
+/* Zones: JS sets data-zone on <html>; everything else is CSS. */
+[data-zone='quiet'] {
+  --zone-color: var(--zone-quiet);
+}
+
+[data-zone='good'] {
+  --zone-color: var(--zone-good);
+}
+
+[data-zone='loud'] {
+  --zone-color: var(--zone-loud);
+}
+
+.zone-label {
+  margin: 0;
+  min-height: 1.3em;
+  font-size: clamp(1.5rem, 7vw, 2.5rem);
+  font-weight: 700;
+  color: var(--zone-color, var(--fg));
+  transition: color 250ms ease;
 }
 
 .readout {
@@ -130,6 +174,19 @@ h1 {
   accent-color: var(--accent);
 }
 
+.setting-inline {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.setting-inline input {
+  width: 1.4rem;
+  height: 1.4rem;
+  accent-color: var(--accent);
+}
+
 .setting output {
   font-variant-numeric: tabular-nums;
 }
@@ -137,4 +194,13 @@ h1 {
 .hint {
   margin: 0.5rem 0 0;
   font-size: 0.875rem;
+}
+
+/* Deploy stamp (set by the deploy workflow), to check a device has the latest version. */
+.version {
+  margin: 1.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
 }

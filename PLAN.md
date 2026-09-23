@@ -8,7 +8,7 @@ Decisions so far:
 
 - Mobile-first PWA for a tablet or phone
 - Soft chime as the audio cue
-- Calibration step plus a parent slider to set the threshold
+- Calibration step plus a parent sensitivity slider (the "too loud" line itself is fixed)
 - Hosted on GitHub Pages
 - **No build step**: plain HTML, CSS and JS
 
@@ -43,7 +43,7 @@ way2loud/
     audio/
       meter.js          # mic stream → dBFS readings (the only file that touches browser audio)
       levels.js         # pure: RMS→dB, smoothing, loud/ok decision with hysteresis + hold time
-      calibration.js    # pure: baseline from samples → suggested threshold
+      calibration.js    # pure: baseline from samples → suggested sensitivity
       chime.js          # oscillator tone + cooldown
     ui/
       meter-view.js     # updates --level / zone class
@@ -62,9 +62,10 @@ way2loud/
 - **Hysteresis**: the level has to stay above the threshold for about 400 ms before it counts as loud. It only goes back to normal once it drops a few dB below the threshold. This stops the display from flickering.
 - **Chime cooldown**: at most one chime every 3 s, so it doesn't turn into nagging.
 - **Sensitivity (per device)**: every reading is shifted by a gain in dB (±30), like an input gain knob, because each device's mic has a different sensitivity. It's set in a collapsed Settings panel and saved per device in localStorage. Calibration can later set it automatically so the child's normal voice lands at the same point on the bar on every device.
-- **Calibration**: the child speaks normally for about 5 s. Take a high percentile (p90) of the voiced frames and add about 6 dB (adjustable) to get the threshold. Frames below the noise floor are ignored.
+- **Calibration**: the child speaks normally for about 5 s. Take a high percentile (p90) of the voiced frames, ignoring frames below the noise floor. Set the sensitivity so that level lands a margin (about 6 dB, adjustable) below the "too loud" line.
 - **Feedback loop**: the chime is quiet and short, and the meter ignores input while the chime plays. Otherwise the chime itself could register as loud.
 - **Three zones**: quiet, good and too loud. The visual encourages the "good" zone instead of only punishing the "too loud" one.
+- **Zone defaults** (in dB after sensitivity; tuned on the first phone, where a quiet room read about -40, normal talking -30 ± 5 and loud talking -20 ± 5): too loud above -23, reset below -26, quiet below -35. The bar shows -53 to -8 dB, so the "too loud" line always sits at two thirds of the bar. There is one control, Sensitivity; a separate threshold slider would do the same job.
 
 ## Local dev
 
@@ -73,7 +74,7 @@ way2loud/
 
 ## Testing
 
-- **Unit (Vitest)**: `levels.js` and `calibration.js` hold all the decision logic as pure functions. Their tests feed synthetic sample arrays through the logic and check the RMS/dB math, smoothing, the hysteresis timing (using fake timers), the cooldown and the threshold calibration.
+- **Unit (Vitest)**: `levels.js` and `calibration.js` hold all the decision logic as pure functions. Their tests feed synthetic sample arrays through the logic and check the RMS/dB math, smoothing, the hysteresis timing (using explicit timestamps), the cooldown and the calibration.
 - **E2E (Playwright, Chromium)**:
   - Chromium can feed a WAV file in place of a real mic, using `--use-fake-device-for-media-stream --use-file-for-fake-audio-capture=tests/fixtures/loud.wav` and `quiet.wav`.
   - The tests check that the UI turns red for the loud clip and stays green for the quiet one. They also cover the mic-permission flow and saving the settings.
@@ -95,7 +96,7 @@ way2loud/
 3. Loud detection logic, the visual zones and the chime, all with unit tests.
 4. Calibration flow and the parent settings.
 5. PWA install, offline use, wake lock, and the E2E tests with audio fixtures.
-6. Try it with your kid and tune the smoothing and threshold defaults.
+6. Try it with your kid and tune the smoothing and zone defaults.
 
 ## Out of scope for the POC
 

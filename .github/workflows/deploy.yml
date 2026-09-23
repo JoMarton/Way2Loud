@@ -29,6 +29,12 @@ jobs:
           for f in index.html styles.css manifest.webmanifest sw.js js icons; do
             if [ -e "$f" ]; then cp -R "$f" _site/; fi
           done
+      # Stamp the page so you can tell which deploy a device is showing.
+      - name: Stamp version
+        run: |
+          stamp="v${GITHUB_RUN_NUMBER} · ${GITHUB_SHA::7}"
+          sed -i "s|<p class=\"version\">dev</p>|<p class=\"version\">${stamp}</p>|" _site/index.html
+          grep -F "$stamp" _site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

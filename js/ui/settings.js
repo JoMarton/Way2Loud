@@ -10,10 +10,11 @@ export const SENSITIVITY_MAX_DB = 30;
 /**
  * @typedef {object} Settings
  * @property {number} sensitivityDb gain added to every reading, in dB
+ * @property {boolean} chimeEnabled whether to chime when the voice gets too loud
  */
 
 /** @type {Readonly<Settings>} */
-export const DEFAULT_SETTINGS = Object.freeze({ sensitivityDb: 0 });
+export const DEFAULT_SETTINGS = Object.freeze({ sensitivityDb: 0, chimeEnabled: true });
 
 /**
  * @typedef {Pick<Storage, 'getItem' | 'setItem'>} StorageLike
@@ -40,6 +41,8 @@ export function normalizeSettings(raw) {
     sensitivityDb: Number.isFinite(sensitivity)
       ? Math.min(SENSITIVITY_MAX_DB, Math.max(SENSITIVITY_MIN_DB, Math.round(sensitivity)))
       : DEFAULT_SETTINGS.sensitivityDb,
+    chimeEnabled:
+      typeof obj.chimeEnabled === 'boolean' ? obj.chimeEnabled : DEFAULT_SETTINGS.chimeEnabled,
   };
 }
 
@@ -74,7 +77,7 @@ export const formatDb = (db) => `${db > 0 ? '+' : ''}${db} dB`;
 
 /**
  * Connects the settings panel controls to stored settings.
- * @param {{ sensitivity: HTMLInputElement, sensitivityValue: HTMLOutputElement }} els
+ * @param {{ sensitivity: HTMLInputElement, sensitivityValue: HTMLOutputElement, chime: HTMLInputElement }} els
  * @returns {{ readonly current: Settings }}
  */
 export function bindSettings(els) {
@@ -84,10 +87,16 @@ export function bindSettings(els) {
   els.sensitivity.max = String(SENSITIVITY_MAX_DB);
   els.sensitivity.value = String(current.sensitivityDb);
   els.sensitivityValue.value = formatDb(current.sensitivityDb);
+  els.chime.checked = current.chimeEnabled;
 
   els.sensitivity.addEventListener('input', () => {
     current = normalizeSettings({ ...current, sensitivityDb: els.sensitivity.value });
     els.sensitivityValue.value = formatDb(current.sensitivityDb);
+    saveSettings(current);
+  });
+
+  els.chime.addEventListener('change', () => {
+    current = { ...current, chimeEnabled: els.chime.checked };
     saveSettings(current);
   });
 
