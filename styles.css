@@ -1,4 +1,7 @@
 :root {
+  /* Section boundaries on the bar (0..1); JS sets the real values from the zone settings. */
+  --quiet-at: 0.4;
+  --threshold: 0.667;
   --bg: #f6f8f5;
   --fg: #1c2420;
   --accent: #1f7a4d;
@@ -7,6 +10,9 @@
   --zone-quiet: #7d8f86;
   --zone-good: #1f7a4d;
   --zone-loud: #c4432b;
+  --track-quiet: color-mix(in srgb, var(--zone-quiet) 18%, var(--track));
+  --track-good: color-mix(in srgb, var(--zone-good) 22%, var(--track));
+  --track-loud: color-mix(in srgb, var(--zone-loud) 22%, var(--track));
   color-scheme: light dark;
 }
 
@@ -64,12 +70,17 @@ h1 {
 /* Level meter: JS sets --level (0..1); the fill scales, so there is no layout work per frame. */
 .meter {
   --level: 0;
-  --threshold: 0.667;
   position: relative;
   width: min(100%, 28rem);
   height: 3rem;
   border-radius: 1.5rem;
-  background: var(--track);
+  /* Tinted sections behind the fill: quiet | normal voice | too loud. */
+  background: linear-gradient(
+    to right,
+    var(--track-quiet) 0 calc(var(--quiet-at) * 100%),
+    var(--track-good) 0 calc(var(--threshold) * 100%),
+    var(--track-loud) 0
+  );
   overflow: hidden;
 }
 
@@ -83,16 +94,41 @@ h1 {
     background-color 250ms ease;
 }
 
-/* The "too loud" line. */
-.meter-threshold {
+/* Lines between the sections. */
+.meter-mark {
   position: absolute;
   top: 0;
   bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--fg);
+  opacity: 0.25;
+}
+
+.meter-mark-quiet {
+  left: calc(var(--quiet-at) * 100%);
+}
+
+.meter-mark-threshold {
   left: calc(var(--threshold) * 100%);
   width: 3px;
   margin-left: -1.5px;
-  background: var(--fg);
-  opacity: 0.35;
+  opacity: 0.45;
+}
+
+.meter-legend {
+  display: grid;
+  grid-template-columns:
+    calc(var(--quiet-at) * 100%) calc((var(--threshold) - var(--quiet-at)) * 100%)
+    1fr;
+  width: min(100%, 28rem);
+  margin-top: -0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.meter-legend span {
+  text-align: center;
 }
 
 /* Zones: JS sets data-zone on <html>; everything else is CSS. */
@@ -133,6 +169,14 @@ h1 {
   font: inherit;
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.button-small {
+  display: block;
+  min-width: 0;
+  margin-top: 1rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 1rem;
 }
 
 .button:disabled {

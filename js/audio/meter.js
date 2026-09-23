@@ -22,6 +22,17 @@ export class AudioSuspendedError extends Error {
  * @property {AudioContext} context the running context, for playing the chime
  */
 
+/**
+ * Creates an audio context, including on older Safari that only has the prefixed name.
+ * @returns {AudioContext}
+ */
+export function createAudioContext() {
+  const AudioCtx =
+    window.AudioContext ??
+    /** @type {typeof AudioContext} */ (/** @type {any} */ (window).webkitAudioContext);
+  return new AudioCtx();
+}
+
 /** How long to wait for the browser to let audio run before giving up. */
 const RESUME_TIMEOUT_MS = 3000;
 
@@ -34,10 +45,7 @@ const RESUME_TIMEOUT_MS = 3000;
  * @returns {Promise<Meter>}
  */
 export async function startMeter(onReading) {
-  const AudioCtx =
-    window.AudioContext ??
-    /** @type {typeof AudioContext | undefined} */ (/** @type {any} */ (window).webkitAudioContext);
-  const ctx = new AudioCtx();
+  const ctx = createAudioContext();
   const resumed = ctx.resume();
 
   /** @type {MediaStream | undefined} */

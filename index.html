@@ -14,7 +14,13 @@
       <p id="zone-label" class="zone-label" aria-live="polite">&nbsp;</p>
       <div id="meter" class="meter" role="img" aria-label="Voice loudness">
         <div class="meter-fill"></div>
-        <div class="meter-threshold"></div>
+        <div class="meter-mark meter-mark-quiet"></div>
+        <div class="meter-mark meter-mark-threshold"></div>
+      </div>
+      <div class="meter-legend" aria-hidden="true">
+        <span>quiet</span>
+        <span>normal voice</span>
+        <span>too loud</span>
       </div>
       <p id="readout" class="readout" aria-live="off">– dB</p>
       <button id="toggle" class="button" type="button">Start</button>
@@ -33,6 +39,7 @@
           <span>Chime when too loud</span>
           <input id="chime" type="checkbox" />
         </label>
+        <button id="test-chime" class="button button-small" type="button">Test chime</button>
       </details>
       <p class="version">dev</p>
     </main>

@@ -20,7 +20,9 @@ const ZONE_LABELS = {
  */
 export function createMeterView(els) {
   let lastText = -Infinity;
-  els.meter.style.setProperty('--threshold', dbToLevel(ZONES.thresholdDb).toFixed(3));
+  // Section boundaries (quiet | normal voice | too loud), shared by the bar and its legend.
+  els.root.style.setProperty('--quiet-at', dbToLevel(ZONES.quietDb).toFixed(3));
+  els.root.style.setProperty('--threshold', dbToLevel(ZONES.thresholdDb).toFixed(3));
 
   return {
     /** @param {{ smoothedDb: number, zone: import('../audio/levels.js').Zone, time: number }} state */

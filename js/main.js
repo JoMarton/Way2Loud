@@ -2,9 +2,9 @@
 
 /** Entry point. Wires screens: Start → Calibrate → Listen (calibration comes in milestone 4). */
 
-import { CHIME_MS, createChime } from './audio/chime.js';
+import { CHIME_MS, createChime, playChime } from './audio/chime.js';
 import { applyGain, createLoudnessDetector } from './audio/levels.js';
-import { AudioSuspendedError, startMeter } from './audio/meter.js';
+import { AudioSuspendedError, createAudioContext, startMeter } from './audio/meter.js';
 import { createMeterView } from './ui/meter-view.js';
 import { bindSettings } from './ui/settings.js';
 
@@ -19,6 +19,7 @@ const byId = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
 const statusEl = byId('status');
 const toggleEl = /** @type {HTMLButtonElement} */ (byId('toggle'));
+const testChimeEl = byId('test-chime');
 const view = createMeterView({
   root: document.documentElement,
   meter: byId('meter'),
@@ -33,6 +34,8 @@ const settings = bindSettings({
 
 /** @type {import('./audio/meter.js').Meter | null} */
 let meter = null;
+/** @type {ReturnType<typeof createLoudnessDetector> | null} */
+let detector = null;
 
 /** @param {unknown} err */
 function describeError(err) {
@@ -48,17 +51,18 @@ function describeError(err) {
 async function start() {
   toggleEl.disabled = true;
   statusEl.textContent = 'Starting the mic…';
-  const detector = createLoudnessDetector();
+  const listening = createLoudnessDetector();
   /** @type {ReturnType<typeof createChime> | null} */
   let chime = null;
   try {
     meter = await startMeter(({ db, time }) => {
-      const decision = detector.update(applyGain(db, settings.current.sensitivityDb), time);
+      const decision = listening.update(applyGain(db, settings.current.sensitivityDb), time);
       view.render({ ...decision, time });
       if (decision.becameLoud && settings.current.chimeEnabled && chime?.ring(time)) {
-        detector.pauseUntil(time + CHIME_MS + CHIME_TAIL_MS);
+        listening.pauseUntil(time + CHIME_MS + CHIME_TAIL_MS);
       }
     });
+    detector = listening;
     chime = createChime(meter.context);
     toggleEl.textContent = 'Stop';
     statusEl.textContent = 'Listening. Try talking, then talking louder.';
@@ -72,11 +76,27 @@ async function start() {
 function stop() {
   meter?.stop();
   meter = null;
+  detector = null;
   view.reset();
   toggleEl.textContent = 'Start';
   statusEl.textContent = 'Stopped.';
 }
 
+/** Plays the chime on demand, so a parent can check the phone's sound works. */
+function testChime() {
+  if (meter) {
+    playChime(meter.context);
+    detector?.pauseUntil(performance.now() + CHIME_MS + CHIME_TAIL_MS);
+  } else {
+    // Not listening: use a short-lived context, created inside the tap as browsers require.
+    const ctx = createAudioContext();
+    void ctx.resume().then(() => playChime(ctx));
+    setTimeout(() => void ctx.close(), CHIME_MS + 500);
+  }
+  statusEl.textContent = 'Played the test chime. Heard nothing? Turn up the media volume.';
+}
+
+testChimeEl.addEventListener('click', testChime);
 toggleEl.addEventListener('click', () => (meter ? stop() : void start()));
 view.reset();
 statusEl.textContent = 'Tap Start and allow the microphone.';

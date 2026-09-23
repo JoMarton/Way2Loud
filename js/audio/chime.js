@@ -24,39 +24,46 @@ export function createCooldown(cooldownMs) {
   };
 }
 
+/** Peak volume (0..1). Kept moderate: it should be noticed, not startle. */
+const DEFAULT_VOLUME = 0.35;
+
 /**
+ * Plays the chime now: two gentle sine partials with a quick attack and a long fade.
+ * @param {AudioContext} ctx a running context
+ * @param {number} [volume]
+ */
+export function playChime(ctx, volume = DEFAULT_VOLUME) {
+  const start = ctx.currentTime + 0.01;
+  const end = start + CHIME_MS / 1000;
+  const out = ctx.createGain();
+  out.gain.setValueAtTime(0.0001, start);
+  out.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+  out.gain.exponentialRampToValueAtTime(0.0001, end);
+  out.connect(ctx.destination);
+
+  for (const [freq, level] of [
+    [880, 1],
+    [1320, 0.35],
+  ]) {
+    const osc = ctx.createOscillator();
+    const partial = ctx.createGain();
+    osc.frequency.value = freq;
+    partial.gain.value = level;
+    osc.connect(partial).connect(out);
+    osc.start(start);
+    osc.stop(end);
+    osc.onended = () => partial.disconnect();
+  }
+  setTimeout(() => out.disconnect(), CHIME_MS + 100);
+}
+
+/**
+ * The alert chime: plays at most once per cooldown.
  * @param {AudioContext} ctx the meter's context, already running
  * @param {{ cooldownMs?: number, volume?: number }} [options]
  */
-export function createChime(ctx, { cooldownMs = 3000, volume = 0.2 } = {}) {
+export function createChime(ctx, { cooldownMs = 3000, volume = DEFAULT_VOLUME } = {}) {
   const cooldown = createCooldown(cooldownMs);
-
-  /** Two gentle sine partials with a quick attack and a long exponential fade. */
-  const play = () => {
-    const start = ctx.currentTime + 0.01;
-    const end = start + CHIME_MS / 1000;
-    const out = ctx.createGain();
-    out.gain.setValueAtTime(0.0001, start);
-    out.gain.exponentialRampToValueAtTime(volume, start + 0.015);
-    out.gain.exponentialRampToValueAtTime(0.0001, end);
-    out.connect(ctx.destination);
-
-    for (const [freq, level] of [
-      [880, 1],
-      [1320, 0.35],
-    ]) {
-      const osc = ctx.createOscillator();
-      const partial = ctx.createGain();
-      osc.frequency.value = freq;
-      partial.gain.value = level;
-      osc.connect(partial).connect(out);
-      osc.start(start);
-      osc.stop(end);
-      osc.onended = () => partial.disconnect();
-    }
-    setTimeout(() => out.disconnect(), CHIME_MS + 100);
-  };
-
   return {
     /**
      * Plays the chime unless it played within the cooldown.
@@ -65,7 +72,7 @@ export function createChime(ctx, { cooldownMs = 3000, volume = 0.2 } = {}) {
      */
     ring(nowMs) {
       if (!cooldown.tryFire(nowMs)) return false;
-      play();
+      playChime(ctx, volume);
       return true;
     },
   };
