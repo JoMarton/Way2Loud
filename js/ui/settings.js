@@ -2,6 +2,8 @@
 
 /** Parent settings: stored per device, since every device's mic differs. */
 
+import { RANDOM_SOUND, SOUNDS, findSound } from '../audio/sounds.js';
+
 const STORAGE_KEY = 'way2loud.settings';
 
 export const SENSITIVITY_MIN_DB = -30;
@@ -10,11 +12,18 @@ export const SENSITIVITY_MAX_DB = 30;
 /**
  * @typedef {object} Settings
  * @property {number} sensitivityDb gain added to every reading, in dB
- * @property {boolean} chimeEnabled whether to chime when the voice gets too loud
+ * @property {boolean} chimeEnabled whether to play a sound when the voice gets too loud
+ * @property {string} chimeSound a sound id, or "random" for a different one each time
+ * @property {boolean} keepScreenOn whether to keep the screen on while listening
  */
 
 /** @type {Readonly<Settings>} */
-export const DEFAULT_SETTINGS = Object.freeze({ sensitivityDb: 0, chimeEnabled: true });
+export const DEFAULT_SETTINGS = Object.freeze({
+  sensitivityDb: 0,
+  chimeEnabled: true,
+  chimeSound: RANDOM_SOUND,
+  keepScreenOn: false,
+});
 
 /**
  * @typedef {Pick<Storage, 'getItem' | 'setItem'>} StorageLike
@@ -43,6 +52,13 @@ export function normalizeSettings(raw) {
       : DEFAULT_SETTINGS.sensitivityDb,
     chimeEnabled:
       typeof obj.chimeEnabled === 'boolean' ? obj.chimeEnabled : DEFAULT_SETTINGS.chimeEnabled,
+    chimeSound:
+      typeof obj.chimeSound === 'string' &&
+      (obj.chimeSound === RANDOM_SOUND || findSound(obj.chimeSound))
+        ? obj.chimeSound
+        : DEFAULT_SETTINGS.chimeSound,
+    keepScreenOn:
+      typeof obj.keepScreenOn === 'boolean' ? obj.keepScreenOn : DEFAULT_SETTINGS.keepScreenOn,
   };
 }
 
@@ -76,29 +92,53 @@ export function saveSettings(settings, storage = defaultStorage()) {
 export const formatDb = (db) => `${db > 0 ? '+' : ''}${db} dB`;
 
 /**
+ * @typedef {object} SettingsElements
+ * @property {HTMLInputElement} sensitivity
+ * @property {HTMLOutputElement} sensitivityValue
+ * @property {HTMLInputElement} chime
+ * @property {HTMLSelectElement} sound
+ * @property {HTMLInputElement} keepScreenOn
+ */
+
+/**
  * Connects the settings panel controls to stored settings.
- * @param {{ sensitivity: HTMLInputElement, sensitivityValue: HTMLOutputElement, chime: HTMLInputElement }} els
+ * @param {SettingsElements} els
+ * @param {(settings: Settings) => void} [onChange] called after any change
  * @returns {{ readonly current: Settings }}
  */
-export function bindSettings(els) {
+export function bindSettings(els, onChange = () => {}) {
   let current = loadSettings();
+
+  /** @param {Partial<Settings>} patch */
+  const update = (patch) => {
+    current = normalizeSettings({ ...current, ...patch });
+    saveSettings(current);
+    onChange(current);
+  };
 
   els.sensitivity.min = String(SENSITIVITY_MIN_DB);
   els.sensitivity.max = String(SENSITIVITY_MAX_DB);
   els.sensitivity.value = String(current.sensitivityDb);
   els.sensitivityValue.value = formatDb(current.sensitivityDb);
-  els.chime.checked = current.chimeEnabled;
-
   els.sensitivity.addEventListener('input', () => {
-    current = normalizeSettings({ ...current, sensitivityDb: els.sensitivity.value });
+    update({ sensitivityDb: Number(els.sensitivity.value) });
     els.sensitivityValue.value = formatDb(current.sensitivityDb);
-    saveSettings(current);
   });
 
-  els.chime.addEventListener('change', () => {
-    current = { ...current, chimeEnabled: els.chime.checked };
-    saveSettings(current);
-  });
+  els.chime.checked = current.chimeEnabled;
+  els.chime.addEventListener('change', () => update({ chimeEnabled: els.chime.checked }));
+
+  els.sound.replaceChildren(
+    new Option('Surprise me (a different one each time)', RANDOM_SOUND),
+    ...SOUNDS.map((sound) => new Option(sound.name, sound.id)),
+  );
+  els.sound.value = current.chimeSound;
+  els.sound.addEventListener('change', () => update({ chimeSound: els.sound.value }));
+
+  els.keepScreenOn.checked = current.keepScreenOn;
+  els.keepScreenOn.addEventListener('change', () =>
+    update({ keepScreenOn: els.keepScreenOn.checked }),
+  );
 
   return {
     get current() {

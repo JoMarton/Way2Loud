@@ -30,6 +30,20 @@ describe('normalizeSettings', () => {
     expect(normalizeSettings({ chimeEnabled: 'no' }).chimeEnabled).toBe(true);
   });
 
+  it('keeps a known sound or "random", and resets an unknown one', () => {
+    expect(normalizeSettings({ chimeSound: 'boing' }).chimeSound).toBe('boing');
+    expect(normalizeSettings({ chimeSound: 'random' }).chimeSound).toBe('random');
+    expect(normalizeSettings({ chimeSound: 'kazoo' }).chimeSound).toBe(DEFAULT_SETTINGS.chimeSound);
+  });
+
+  it('upgrades settings saved before the newer options existed', () => {
+    expect(normalizeSettings({ sensitivityDb: 5, chimeEnabled: false })).toEqual({
+      ...DEFAULT_SETTINGS,
+      sensitivityDb: 5,
+      chimeEnabled: false,
+    });
+  });
+
   it('clamps sensitivity to ±30 dB', () => {
     expect(normalizeSettings({ sensitivityDb: 99 }).sensitivityDb).toBe(30);
     expect(normalizeSettings({ sensitivityDb: -99 }).sensitivityDb).toBe(-30);
@@ -39,8 +53,14 @@ describe('normalizeSettings', () => {
 describe('loadSettings / saveSettings', () => {
   it('round-trips through storage', () => {
     const storage = memoryStorage();
-    saveSettings({ sensitivityDb: 12, chimeEnabled: false }, storage);
-    expect(loadSettings(storage)).toEqual({ sensitivityDb: 12, chimeEnabled: false });
+    const saved = {
+      sensitivityDb: 12,
+      chimeEnabled: false,
+      chimeSound: 'quack',
+      keepScreenOn: true,
+    };
+    saveSettings(saved, storage);
+    expect(loadSettings(storage)).toEqual(saved);
   });
 
   it('returns defaults when storage is empty, corrupt or missing', () => {
@@ -60,7 +80,7 @@ describe('loadSettings / saveSettings', () => {
         throw new Error('blocked');
       },
     };
-    expect(() => saveSettings({ sensitivityDb: 3, chimeEnabled: true }, broken)).not.toThrow();
+    expect(() => saveSettings(DEFAULT_SETTINGS, broken)).not.toThrow();
     expect(loadSettings(broken)).toEqual(DEFAULT_SETTINGS);
   });
 });

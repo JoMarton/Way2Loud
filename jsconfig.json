@@ -11,5 +11,6 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["js/**/*.js", "sw.js"]
+  "include": ["js/**/*.js", "sw.js"],
+  "exclude": ["js/audio/level-processor.js"]
 }

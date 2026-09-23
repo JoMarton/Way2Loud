@@ -231,6 +231,20 @@ h1 {
   accent-color: var(--accent);
 }
 
+.setting select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--track);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+
+.settings > .setting:not(:first-of-type) {
+  margin-top: 1rem;
+}
+
 .setting output {
   font-variant-numeric: tabular-nums;
 }

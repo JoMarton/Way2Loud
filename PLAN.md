@@ -18,13 +18,13 @@ Decisions so far:
 - **Types without a build step**: each JS file starts with `// @ts-check` and uses JSDoc type comments. `tsc --noEmit` checks the types in CI (TypeScript is a dev dependency only).
 - **Web Audio API**:
   - `getUserMedia` → `AnalyserNode` gives the mic signal.
-  - Per animation frame, compute the loudness as RMS and convert it to dBFS.
+  - An `AudioWorklet` computes the loudness as RMS on the audio thread, about every 21 ms, and the page converts it to dBFS. Unlike an animation-frame loop, it keeps running with the screen off where the browser allows it; a timer-polled `AnalyserNode` is the fallback.
   - The browser's echo cancellation, noise suppression and auto gain are turned off (`echoCancellation/noiseSuppression/autoGainControl: false`), because auto gain would hide exactly the loudness we want to measure.
 - **Meter rendering**: the code sets a CSS custom property, e.g. `--level`, and a zone class on the page. CSS handles the size and color transitions, so there's no framework re-render.
-- **Chime**: made in code with an `OscillatorNode` and a volume envelope, so no audio files are needed.
+- **Alert sounds**: ten sounds (chime, ding-dong, xylophone, boing, slide whistle, bloop, duck, robot, cuckoo, shh) made in code from oscillators, filters and noise, so no audio files are needed. They are loudness-matched to within ±1 dB. The parent picks one, or "Surprise me" picks a different one each time.
 - **PWA, written by hand**:
   - `manifest.webmanifest` + `sw.js`, a small cache-first service worker for offline use and "Add to Home Screen".
-  - A Wake Lock keeps the screen on while listening.
+  - An optional "Keep screen on" setting uses a Wake Lock while listening. Listening with the screen off depends on the phone and browser (iOS Safari always pauses), so when the screen comes back on the app reports whether it kept listening.
 - **Dev tooling (package.json has dev dependencies only)**:
   - Vitest, Playwright, TypeScript for checking, ESLint + Prettier.
   - Node 22 and pnpm (npm also works).
@@ -44,7 +44,9 @@ way2loud/
       meter.js          # mic stream → dBFS readings (the only file that touches browser audio)
       levels.js         # pure: RMS→dB, smoothing, loud/ok decision with hysteresis + hold time
       calibration.js    # pure: baseline from samples → suggested sensitivity
-      chime.js          # oscillator tone + cooldown
+      sounds.js         # the ten synthesized sounds + random pick
+      chime.js          # plays the chosen sound + cooldown
+      level-processor.js # AudioWorklet: RMS per block on the audio thread
     ui/
       meter-view.js     # updates --level / zone class
       settings.js       # parent panel; persists to localStorage

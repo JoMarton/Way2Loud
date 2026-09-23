@@ -10,6 +10,10 @@ export default [
     languageOptions: { globals: globals.browser },
   },
   {
+    files: ['js/audio/level-processor.js'],
+    languageOptions: { globals: globals.audioWorklet },
+  },
+  {
     files: ['sw.js'],
     languageOptions: { globals: globals.serviceworker },
   },

@@ -36,10 +36,21 @@
           line.
         </p>
         <label class="setting setting-inline" for="chime">
-          <span>Chime when too loud</span>
+          <span>Play a sound when too loud</span>
           <input id="chime" type="checkbox" />
         </label>
-        <button id="test-chime" class="button button-small" type="button">Test chime</button>
+        <label class="setting" for="sound">
+          <span>Sound</span>
+          <select id="sound"></select>
+        </label>
+        <button id="test-chime" class="button button-small" type="button">Test sound</button>
+        <label class="setting setting-inline" for="keep-screen-on">
+          <span>Keep screen on while listening</span>
+          <input id="keep-screen-on" type="checkbox" />
+        </label>
+        <p id="keep-screen-on-hint" class="hint">
+          Some phones stop listening when the screen turns off. Turn this on if yours does.
+        </p>
       </details>
       <p class="version">dev</p>
     </main>
